@@ -1,25 +1,33 @@
 const ai = require("../gemini");
 
-async function generateAnswer(
-  context,
-  question
-) {
-  const prompt = `
-You are a Resume PDF Assistant.
+function createSummary(context) {
+  const lines = context
+    .split("\n")
+    .filter((line) => line.trim().length > 20)
+    .slice(0, 10);
 
-Rules:
-1. Answer ONLY using the provided context.
-2. Give COMPLETE answers.
-3. Include all related details.
-4. Never answer with a single word if more information exists.
-5. For education questions include:
-   - University name
-   - Degree
-   - Specialization
-   - Duration
-   - CGPA
-6. For skills questions include all skills found.
-7. For project questions include project description.
+  return (
+    "📄 Summary of the document:\n\n" +
+    lines.join("\n")
+  );
+}
+
+async function generateAnswer(context, question) {
+  const lowerQuestion =
+    question.toLowerCase();
+
+  if (!context) {
+    return "I could not find relevant information in the document.";
+  }
+
+  const prompt = `
+You are an AI assistant.
+
+Answer ONLY using the provided context.
+
+If the answer is not present in the context say:
+
+"I could not find that information in the document."
 
 Context:
 ${context}
@@ -27,7 +35,7 @@ ${context}
 Question:
 ${question}
 
-Detailed Answer:
+Answer:
 `;
 
   try {
@@ -37,15 +45,31 @@ Detailed Answer:
         contents: prompt,
       });
 
-    return response.text;
+    return (
+      response.text ||
+      "I could not generate an answer."
+    );
   } catch (error) {
-    console.error(error);
+    console.log(
+      "Gemini Error:",
+      error.message
+    );
 
-    return `
-Based on the document:
+    if (
+      lowerQuestion.includes(
+        "summary"
+      ) ||
+      lowerQuestion.includes(
+        "summarize"
+      )
+    ) {
+      return createSummary(context);
+    }
 
-${context.slice(0, 1500)}
-`;
+    return (
+      "⚠️ Gemini quota exceeded.\n\n" +
+      context.slice(0, 700)
+    );
   }
 }
 

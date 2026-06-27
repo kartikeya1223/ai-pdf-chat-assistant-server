@@ -1,22 +1,34 @@
-const splitTextIntoChunks = async (text) => {
-  const chunkSize = 1000;
-const overlap = 200;
-  const chunks = [];
+const {
+  RecursiveCharacterTextSplitter,
+} = require("@langchain/textsplitters");
 
-  for (
-    let i = 0;
-    i < text.length;
-    i += chunkSize - overlap
-  ) {
-    chunks.push({
-      pageContent: text.slice(
-        i,
-        i + chunkSize
-      ),
-    });
-  }
+const splitTextIntoChunks = async (
+  text
+) => {
+const splitter =
+  new RecursiveCharacterTextSplitter({
+    chunkSize:800,
+    chunkOverlap: 150,
+    separators: [
+      "\n\n",
+      "\n",
+      ". ",
+      " ",
+      "",
+    ],
+  });
 
-  return chunks;
+  const docs =
+    await splitter.createDocuments([
+      text,
+    ]);
+
+  console.log(
+    `Created ${docs.length} chunks`
+  );
+
+  return docs;
 };
 
-module.exports = splitTextIntoChunks;
+module.exports =
+  splitTextIntoChunks;

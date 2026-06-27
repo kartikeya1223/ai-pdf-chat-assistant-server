@@ -1,58 +1,106 @@
-const cosineSimilarity = require(
-  "compute-cosine-similarity"
-);
+const faiss = require("faiss-node");
 
-const vectorData = [];
+let index;
+let storedChunks = [];
 
 async function createVectorStore(
   chunks,
   embeddings
 ) {
-  vectorData.length = 0;
+  storedChunks = chunks;
 
-  for (let i = 0; i < chunks.length; i++) {
-    vectorData.push({
-      text: chunks[i].pageContent,
-      embedding: embeddings[i],
-    });
-  }
+  const dimension =
+    embeddings[0].length;
 
-  console.log(
-    `Stored ${vectorData.length} chunks in vector store`
+  index =
+    new faiss.IndexFlatL2(
+      dimension
+    );
+
+  embeddings.forEach(
+    (embedding) => {
+      index.add(embedding);
+    }
   );
 
-  return vectorData;
+  console.log(
+    `Stored ${embeddings.length} chunks in FAISS`
+  );
+
+  return index;
 }
 
 async function searchSimilarChunks(
   questionEmbedding
 ) {
-  const scores = vectorData.map(
-    (item) => ({
-      text: item.text,
-      score:
-        cosineSimilarity(
-          questionEmbedding,
-          item.embedding
-        ) || 0,
-    })
+  const k = Math.min(
+    10,
+    storedChunks.length
   );
 
-  scores.sort(
-    (a, b) => b.score - a.score
+  const result = index.search(
+    questionEmbedding,
+    k
+  );
+
+  const similarChunks = [];
+
+  for (
+    let i = 0;
+    i < result.labels.length;
+    i++
+  ) {
+    const chunkIndex =
+      result.labels[i];
+
+    if (
+      chunkIndex >= 0 &&
+      storedChunks[chunkIndex]
+    ) {
+      similarChunks.push({
+        score:
+          result.distances[i],
+        text:
+          storedChunks[
+            chunkIndex
+          ].pageContent,
+      });
+    }
+  }
+
+  similarChunks.sort(
+    (a, b) =>
+      a.score - b.score
   );
 
   console.log(
-    "========== TOP MATCHES =========="
+    "========== FAISS RESULTS =========="
   );
 
-  console.log(scores.slice(0, 5));
-return scores
-  .filter(item => item.score > 0.15)
-  .slice(0, 5);
+  console.log(similarChunks);
+
+  const filtered =
+    similarChunks.filter(
+      (chunk) =>
+        chunk.score < 200
+    );
+
+  return filtered.length > 0
+    ? filtered
+    : similarChunks.slice(0, 5);
+}
+
+function getAllChunks() {
+  return storedChunks.map(
+    (chunk) => ({
+      score: 0,
+      text: chunk.pageContent,
+    })
+  );
 }
 
 module.exports = {
   createVectorStore,
   searchSimilarChunks,
+  getAllChunks,
 };

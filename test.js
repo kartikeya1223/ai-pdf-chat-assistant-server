@@ -1,5 +1,22 @@
-// test.js
-const { MemoryVectorStore } =
-require("langchain/vectorstores/memory");
+require("dotenv").config();
+const { GoogleGenAI } = require("@google/genai");
 
-console.log("Works");
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
+
+async function test() {
+  try {
+    const response =
+      await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: "Say hello",
+      });
+
+    console.log(response.text);
+  } catch (err) {
+    console.log(err.message);
+  }
+}
+
+test();

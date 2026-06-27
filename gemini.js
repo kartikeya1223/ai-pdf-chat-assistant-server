@@ -1,9 +1,17 @@
-const { GoogleGenAI } = require("@google/genai");
+require("dotenv").config();
 
-console.log("KEY:", process.env.GEMINI_API_KEY);
+const {
+  GoogleGenAI,
+} = require("@google/genai");
+
+console.log(
+  "KEY:",
+  process.env.GEMINI_API_KEY
+);
 
 const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+  apiKey:
+    process.env.GEMINI_API_KEY,
 });
 
 module.exports = ai;
