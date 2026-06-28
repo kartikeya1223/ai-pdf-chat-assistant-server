@@ -49,16 +49,38 @@ const uploadPDF = async (
     const pdfPath =
       req.file.path;
 
-    const text =
-      await extractTextFromPDF(
-        pdfPath
-      );
+   const text =
+  await extractTextFromPDF(
+    pdfPath
+  );
 
-    const chunks =
-      await splitTextIntoChunks(
-        text
-      );
+if (
+  !text ||
+  typeof text !== "string" ||
+  text.trim().length === 0
+) {
+  return res.status(422).json({
+    success: false,
+    message:
+      "No readable text was found in this PDF. It may be a scanned or image-based PDF.",
+  });
+}
 
+const chunks =
+  await splitTextIntoChunks(
+    text
+  );
+
+if (
+  !Array.isArray(chunks) ||
+  chunks.length === 0
+) {
+  return res.status(422).json({
+    success: false,
+    message:
+      "The PDF did not produce any readable text chunks.",
+  });
+}
     const embeddings =
       await generateEmbeddings(
         chunks.map(
