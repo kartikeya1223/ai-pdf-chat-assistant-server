@@ -20,14 +20,18 @@ async function generateAnswer(context, question) {
     return "I could not find relevant information in the document.";
   }
 
-  const prompt = `
-You are an AI assistant.
+ const prompt = `
+You are an AI assistant that answers questions about an uploaded document.
 
-Answer ONLY using the provided context.
+Use ONLY the provided context.
 
-If the answer is not present in the context say:
-
-"I could not find that information in the document."
+Rules:
+1. Answer directly using information found in the context.
+2. When the user says "my", interpret it as referring to the person or people identified in the document.
+3. If more than one possible answer exists, list all possible answers instead of saying the information is missing.
+4. Names, registration numbers, headings, and short text are valid information even if they appear on separate lines.
+5. Do not invent information.
+6. Only say "I could not find that information in the document." when the requested information is genuinely absent.
 
 Context:
 ${context}
